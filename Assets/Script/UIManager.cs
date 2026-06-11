@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 public class UIManager : MonoBehaviour
 {
@@ -23,7 +24,12 @@ public class UIManager : MonoBehaviour
     [Header("Professor Controls")]
     [SerializeField] private Slider timelineSlider;
 
-    private bool isDraggingSlider = false;
+    private bool ignoreSliderCallback = false;
+
+    private bool controlsVisible = true;
+
+    [SerializeField] private float toggleCooldown = 0.2f;
+    private float nextToggleTime = 0f;
 
     private void Awake()
     {
@@ -35,38 +41,83 @@ public class UIManager : MonoBehaviour
         if (controlPanel != null)
             controlPanel.SetActive(false);
 
-        Debug.Log($"UIManager Awake - Professor Mode: {isProfessorMode}");
+        if (timelineSlider != null)
+        {
+            timelineSlider.minValue = 0f;
+            timelineSlider.maxValue = 1f;
+            timelineSlider.wholeNumbers = false;
+
+            timelineSlider.onValueChanged.AddListener(OnTimelineValueChanged);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (timelineSlider != null)
+            timelineSlider.onValueChanged.RemoveListener(OnTimelineValueChanged);
     }
 
     private void Update()
     {
         UpdateTimelineSlider();
+        HandleProfessorToggle();
+    }
+
+    private void HandleProfessorToggle()
+    {
+        if (!isProfessorMode)
+            return;
+
+        InputDevice leftController =
+            InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+
+        if (!leftController.isValid)
+            return;
+
+        bool xPressed;
+
+        if (leftController.TryGetFeatureValue(
+            CommonUsages.primaryButton,
+            out xPressed))
+        {
+            if (xPressed && Time.time >= nextToggleTime)
+            {
+                ToggleProfessorPanel();
+                nextToggleTime = Time.time + toggleCooldown;
+            }
+        }
+    }
+
+    private void ToggleProfessorPanel()
+    {
+        if (controlPanel == null)
+            return;
+
+        controlsVisible = !controlsVisible;
+        controlPanel.SetActive(controlsVisible);
     }
 
     public void OnPlayPressed()
     {
-        Debug.Log("Antarctic Play pressed.");
+        Debug.Log("Play Pressed");
 
         if (startPanel != null)
             startPanel.SetActive(false);
 
         if (controlPanel != null)
-        {
             controlPanel.SetActive(isProfessorMode);
-            Debug.Log($"Professor Mode: {isProfessorMode}, Control Panel Active: {controlPanel.activeSelf}");
-        }
 
         SetSkybox(videoSkybox);
 
         if (playbackManager == null)
         {
-            Debug.LogError("UIManager: PlaybackManager reference is missing.");
+            Debug.LogError("PlaybackManager missing.");
             return;
         }
 
         if (antarcticVideo == null)
         {
-            Debug.LogError("UIManager: Antarctic video entry is missing.");
+            Debug.LogError("Antarctic video missing.");
             return;
         }
 
@@ -75,31 +126,24 @@ public class UIManager : MonoBehaviour
 
     public void OnPausePressed()
     {
-        if (!isProfessorMode) return;
+        if (!isProfessorMode)
+            return;
 
-        if (playbackManager != null)
-            playbackManager.PauseVideo();
+        playbackManager?.PauseVideo();
     }
 
     public void OnResumePressed()
     {
-        if (!isProfessorMode) return;
+        if (!isProfessorMode)
+            return;
 
-        if (playbackManager != null)
-            playbackManager.PlayVideo();
-    }
-
-    public void OnTogglePlayPausePressed()
-    {
-        if (!isProfessorMode) return;
-
-        if (playbackManager != null)
-            playbackManager.TogglePlayPause();
+        playbackManager?.PlayVideo();
     }
 
     public void OnRestartPressed()
     {
-        if (!isProfessorMode) return;
+        if (!isProfessorMode)
+            return;
 
         if (playbackManager == null)
             return;
@@ -113,32 +157,10 @@ public class UIManager : MonoBehaviour
         if (!isProfessorMode)
             return;
 
-        if (timelineSlider == null || playbackManager == null)
+        if (timelineSlider == null)
             return;
 
-        if (isDraggingSlider)
-            return;
-
-        double length = playbackManager.CurrentLength;
-
-        if (length <= 0)
-            return;
-
-        timelineSlider.value = (float)(playbackManager.CurrentTime / length);
-    }
-
-    public void OnTimelineDragStarted()
-    {
-        if (!isProfessorMode) return;
-
-        isDraggingSlider = true;
-    }
-
-    public void OnTimelineDragEnded()
-    {
-        if (!isProfessorMode) return;
-
-        if (timelineSlider == null || playbackManager == null)
+        if (playbackManager == null)
             return;
 
         double length = playbackManager.CurrentLength;
@@ -146,10 +168,34 @@ public class UIManager : MonoBehaviour
         if (length <= 0)
             return;
 
-        double targetTime = timelineSlider.value * length;
+        float normalized =
+            (float)(playbackManager.CurrentTime / length);
+
+        ignoreSliderCallback = true;
+
+        timelineSlider.SetValueWithoutNotify(normalized);
+
+        ignoreSliderCallback = false;
+    }
+
+    private void OnTimelineValueChanged(float value)
+    {
+        if (ignoreSliderCallback)
+            return;
+
+        if (playbackManager == null)
+            return;
+
+        double length = playbackManager.CurrentLength;
+
+        if (length <= 0)
+            return;
+
+        double targetTime = value * length;
+
+        Debug.Log($"Seeking To {targetTime:F2}");
+
         playbackManager.SeekTo(targetTime);
-
-        isDraggingSlider = false;
     }
 
     private void SetSkybox(Material skybox)

@@ -43,6 +43,11 @@ public class PlaybackManager : MonoBehaviour
         videoPlayer.loopPointReached += OnVideoFinished;
     }
 
+    public VideoPlayer GetVideoPlayer()
+    {
+        return videoPlayer;
+    }
+
     private void OnDestroy()
     {
         if (videoPlayer == null)
@@ -176,3 +181,4 @@ public class PlaybackManager : MonoBehaviour
         VideoFinished?.Invoke(currentVideo);
     }
 }
+
