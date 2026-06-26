@@ -24,6 +24,10 @@ public class UIManager : MonoBehaviour
     [Header("Professor Controls")]
     [SerializeField] private Slider timelineSlider;
 
+    [Header("Playback Buttons")]
+    [SerializeField] private GameObject playButton;
+    [SerializeField] private GameObject pauseButton;
+
     private bool ignoreSliderCallback = false;
 
     private bool controlsVisible = true;
@@ -49,6 +53,12 @@ public class UIManager : MonoBehaviour
 
             timelineSlider.onValueChanged.AddListener(OnTimelineValueChanged);
         }
+
+        if (playButton != null)
+            playButton.SetActive(true);
+
+        if (pauseButton != null)
+            pauseButton.SetActive(false);
     }
 
     private void OnDestroy()
@@ -122,6 +132,12 @@ public class UIManager : MonoBehaviour
         }
 
         playbackManager.LoadVideo(antarcticVideo);
+
+        if (playButton != null)
+            playButton.SetActive(false);
+
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
     }
 
     public void OnPausePressed()
@@ -130,6 +146,12 @@ public class UIManager : MonoBehaviour
             return;
 
         playbackManager?.PauseVideo();
+
+        if (playButton != null)
+            playButton.SetActive(true);
+
+        if (pauseButton != null)
+            pauseButton.SetActive(false);
     }
 
     public void OnResumePressed()
@@ -138,6 +160,12 @@ public class UIManager : MonoBehaviour
             return;
 
         playbackManager?.PlayVideo();
+
+        if (playButton != null)
+            playButton.SetActive(false);
+
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
     }
 
     public void OnRestartPressed()
@@ -150,6 +178,12 @@ public class UIManager : MonoBehaviour
 
         playbackManager.SeekTo(0);
         playbackManager.PlayVideo();
+
+        if (playButton != null)
+            playButton.SetActive(false);
+
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
     }
 
     private void UpdateTimelineSlider()
@@ -172,9 +206,7 @@ public class UIManager : MonoBehaviour
             (float)(playbackManager.CurrentTime / length);
 
         ignoreSliderCallback = true;
-
         timelineSlider.SetValueWithoutNotify(normalized);
-
         ignoreSliderCallback = false;
     }
 
@@ -192,8 +224,6 @@ public class UIManager : MonoBehaviour
             return;
 
         double targetTime = value * length;
-
-        Debug.Log($"Seeking To {targetTime:F2}");
 
         playbackManager.SeekTo(targetTime);
     }
