@@ -14,6 +14,8 @@ public class UIManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlaybackManager playbackManager;
 
+    [SerializeField] private AudioSource lobbyMusic;
+
     [Header("Video")]
     [SerializeField] private VideoEntry antarcticVideo;
 
@@ -111,6 +113,9 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("Play Pressed");
 
+        if(lobbyMusic != null)
+            lobbyMusic.Stop();
+            
         if (startPanel != null)
             startPanel.SetActive(false);
 
