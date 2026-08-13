@@ -1,51 +1,43 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR;
 
 public class UIManager : MonoBehaviour
 {
-    [Header("Role")]
-    [SerializeField] private bool isProfessorMode = true;
+    [Header("Managers")]
+    [SerializeField] private HostManager hostManager;
+    [SerializeField] private EnvironmentManager environmentManager;
+    [SerializeField] private VideoNetworkManager videoNetworkManager;
+    [SerializeField] private PlaybackManager playbackManager;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource lobbyMusic;
 
     [Header("Skyboxes")]
     [SerializeField] private Material lobbySkybox;
     [SerializeField] private Material videoSkybox;
 
-    [Header("References")]
-    [SerializeField] private PlaybackManager playbackManager;
+    [Header("Host Only Menu Buttons")]
+    [SerializeField] private GameObject mainPlayButton;
+    [SerializeField] private GameObject controlsButton;
 
-    [SerializeField] private AudioSource lobbyMusic;
-
-    [Header("Video")]
-    [SerializeField] private VideoEntry antarcticVideo;
-
-    [Header("Panels")]
-    [SerializeField] private GameObject startPanel;
+    [Header("Professor Panel")]
     [SerializeField] private GameObject controlPanel;
-
-    [Header("Professor Controls")]
     [SerializeField] private Slider timelineSlider;
 
-    [Header("Playback Buttons")]
-    [SerializeField] private GameObject playButton;
-    [SerializeField] private GameObject pauseButton;
-
     private bool ignoreSliderCallback = false;
-
-    private bool controlsVisible = true;
-
-    [SerializeField] private float toggleCooldown = 0.2f;
-    private float nextToggleTime = 0f;
 
     private void Awake()
     {
         SetSkybox(lobbySkybox);
 
-        if (startPanel != null)
-            startPanel.SetActive(true);
-
         if (controlPanel != null)
             controlPanel.SetActive(false);
+
+        if (mainPlayButton != null)
+            mainPlayButton.SetActive(false);
+
+        if (controlsButton != null)
+            controlsButton.SetActive(false);
 
         if (timelineSlider != null)
         {
@@ -53,153 +45,136 @@ public class UIManager : MonoBehaviour
             timelineSlider.maxValue = 1f;
             timelineSlider.wholeNumbers = false;
 
-            timelineSlider.onValueChanged.AddListener(OnTimelineValueChanged);
+            timelineSlider.onValueChanged.AddListener(
+                OnTimelineValueChanged);
         }
+    }
 
-        if (playButton != null)
-            playButton.SetActive(true);
+    private void Start()
+    {
+        RefreshHostUI();
 
-        if (pauseButton != null)
-            pauseButton.SetActive(false);
+        if (hostManager != null)
+        {
+            hostManager.OnRoleChanged += RefreshHostUI;
+        }
     }
 
     private void OnDestroy()
     {
         if (timelineSlider != null)
-            timelineSlider.onValueChanged.RemoveListener(OnTimelineValueChanged);
+        {
+            timelineSlider.onValueChanged.RemoveListener(
+                OnTimelineValueChanged);
+        }
+
+        if (hostManager != null)
+        {
+            hostManager.OnRoleChanged -= RefreshHostUI;
+        }
     }
 
     private void Update()
     {
         UpdateTimelineSlider();
-        HandleProfessorToggle();
     }
 
-    private void HandleProfessorToggle()
+    // =========================================================
+    // HOST UI
+    // =========================================================
+
+    public void RefreshHostUI()
     {
-        if (!isProfessorMode)
-            return;
+        bool host =
+            hostManager != null &&
+            hostManager.IsHost;
 
-        InputDevice leftController =
-            InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        Debug.Log(
+            $"UIManager: RefreshHostUI - Host = {host}");
 
-        if (!leftController.isValid)
-            return;
+        if (mainPlayButton != null)
+            mainPlayButton.SetActive(host);
 
-        bool xPressed;
+        if (controlsButton != null)
+            controlsButton.SetActive(host);
 
-        if (leftController.TryGetFeatureValue(
-            CommonUsages.primaryButton,
-            out xPressed))
-        {
-            if (xPressed && Time.time >= nextToggleTime)
-            {
-                ToggleProfessorPanel();
-                nextToggleTime = Time.time + toggleCooldown;
-            }
-        }
+        if (!host && controlPanel != null)
+            controlPanel.SetActive(false);
     }
 
-    private void ToggleProfessorPanel()
+    // =========================================================
+    // EXPERIENCE
+    // Called locally AND on network clients.
+    // =========================================================
+
+    public void ApplyExperienceStarted()
     {
-        if (controlPanel == null)
-            return;
+        Debug.Log("UIManager: Applying Experience Started");
 
-        controlsVisible = !controlsVisible;
-        controlPanel.SetActive(controlsVisible);
+        if (lobbyMusic != null)
+            lobbyMusic.Stop();
+
+        if (environmentManager != null)
+            environmentManager.StartExperience();
+
+        SetSkybox(videoSkybox);
     }
+
+    // =========================================================
+    // PROFESSOR BUTTONS
+    // =========================================================
 
     public void OnPlayPressed()
     {
-        Debug.Log("Play Pressed");
-
-        if(lobbyMusic != null)
-            lobbyMusic.Stop();
-            
-        if (startPanel != null)
-            startPanel.SetActive(false);
-
-        if (controlPanel != null)
-            controlPanel.SetActive(isProfessorMode);
-
-        SetSkybox(videoSkybox);
-
-        if (playbackManager == null)
-        {
-            Debug.LogError("PlaybackManager missing.");
+        if (!CanControlVideo())
             return;
-        }
 
-        if (antarcticVideo == null)
-        {
-            Debug.LogError("Antarctic video missing.");
-            return;
-        }
+        Debug.Log("UIManager: Host pressed START");
 
-        playbackManager.LoadVideo(antarcticVideo);
-
-        if (playButton != null)
-            playButton.SetActive(false);
-
-        if (pauseButton != null)
-            pauseButton.SetActive(true);
+        videoNetworkManager?.SendPlay();
     }
 
     public void OnPausePressed()
     {
-        if (!isProfessorMode)
+        if (!CanControlVideo())
             return;
 
-        playbackManager?.PauseVideo();
+        Debug.Log("UIManager: Host pressed PAUSE");
 
-        if (playButton != null)
-            playButton.SetActive(true);
-
-        if (pauseButton != null)
-            pauseButton.SetActive(false);
+        videoNetworkManager?.SendPause();
     }
 
     public void OnResumePressed()
     {
-        if (!isProfessorMode)
+        if (!CanControlVideo())
             return;
 
-        playbackManager?.PlayVideo();
+        Debug.Log("UIManager: Host pressed RESUME");
 
-        if (playButton != null)
-            playButton.SetActive(false);
-
-        if (pauseButton != null)
-            pauseButton.SetActive(true);
+        videoNetworkManager?.SendResume();
     }
 
     public void OnRestartPressed()
     {
-        if (!isProfessorMode)
+        if (!CanControlVideo())
             return;
 
-        if (playbackManager == null)
-            return;
+        Debug.Log("UIManager: Host pressed RESTART");
 
-        playbackManager.SeekTo(0);
-        playbackManager.PlayVideo();
-
-        if (playButton != null)
-            playButton.SetActive(false);
-
-        if (pauseButton != null)
-            pauseButton.SetActive(true);
+        videoNetworkManager?.SendRestart();
     }
+
+    // =========================================================
+    // TIMELINE
+    // =========================================================
 
     private void UpdateTimelineSlider()
     {
-        if (!isProfessorMode)
+        if (!CanControlVideo())
             return;
 
-        if (timelineSlider == null)
-            return;
-
-        if (playbackManager == null)
+        if (timelineSlider == null ||
+            playbackManager == null)
             return;
 
         double length = playbackManager.CurrentLength;
@@ -211,7 +186,9 @@ public class UIManager : MonoBehaviour
             (float)(playbackManager.CurrentTime / length);
 
         ignoreSliderCallback = true;
+
         timelineSlider.SetValueWithoutNotify(normalized);
+
         ignoreSliderCallback = false;
     }
 
@@ -220,7 +197,11 @@ public class UIManager : MonoBehaviour
         if (ignoreSliderCallback)
             return;
 
-        if (playbackManager == null)
+        if (!CanControlVideo())
+            return;
+
+        if (playbackManager == null ||
+            videoNetworkManager == null)
             return;
 
         double length = playbackManager.CurrentLength;
@@ -230,8 +211,18 @@ public class UIManager : MonoBehaviour
 
         double targetTime = value * length;
 
-        playbackManager.SeekTo(targetTime);
+        videoNetworkManager.SendSeek(targetTime);
     }
+
+    private bool CanControlVideo()
+    {
+        return hostManager != null &&
+               hostManager.IsHost;
+    }
+
+    // =========================================================
+    // SKYBOX
+    // =========================================================
 
     private void SetSkybox(Material skybox)
     {

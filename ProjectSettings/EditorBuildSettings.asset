@@ -8,9 +8,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Samples/Ubiq/1.0.0-pre.16/Examples/10_Messages.unity
     guid: f6a60eaf390644c478eef52161acb402
-  - enabled: 1
+  - enabled: 0
     path: Assets/Samples/Ubiq/1.0.0-pre.16/Demo (XRI)/Demo.unity
     guid: 2de505d34345ab340bdde30d419b24eb
+  - enabled: 1
+    path: Assets/Scenes/DemoAntarctica.unity
+    guid: 39400c6d25091744ebbbd132fbfec565
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 2d8664a0f88d2734f8139776cc5567c9, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 80962f4049a94a84085678e422e398b1, type: 2}
