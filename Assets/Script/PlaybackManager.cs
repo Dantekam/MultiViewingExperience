@@ -8,7 +8,7 @@ public class PlaybackManager : MonoBehaviour
     [SerializeField] private VideoPlayer videoPlayer;
 
     [Header("Startup")]
-    [SerializeField] private bool autoPlayWhenPrepared = true;
+    [SerializeField] private bool autoPlayWhenPrepared = false;
 
     public VideoEntry CurrentVideo => currentVideo;
     public bool IsPrepared => videoPlayer != null && videoPlayer.isPrepared;
@@ -179,6 +179,46 @@ public class PlaybackManager : MonoBehaviour
     {
         Debug.Log($"Video playback finished: {currentVideo?.title}");
         VideoFinished?.Invoke(currentVideo);
+    }
+
+    public void LoadLocalFile(
+        VideoEntry entry,
+        string localPath)
+    {
+        if (entry == null)
+        {
+            Debug.LogWarning(
+                "PlaybackManager: VideoEntry is null.");
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(localPath))
+        {
+            Debug.LogError(
+                "PlaybackManager: Local video path is empty.");
+
+            return;
+        }
+
+        currentVideo = entry;
+
+        videoPlayer.Stop();
+
+        videoPlayer.source =
+            VideoSource.Url;
+
+        videoPlayer.clip = null;
+
+        videoPlayer.url =
+            localPath;
+
+        Debug.Log(
+            $"PlaybackManager: Preparing cached local video from {localPath}");
+
+        VideoPrepareStarted?.Invoke(entry);
+
+        videoPlayer.Prepare();
     }
 }
 
