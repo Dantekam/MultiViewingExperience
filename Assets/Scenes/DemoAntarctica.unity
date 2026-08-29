@@ -455,7 +455,7 @@ GameObject:
   - component: {fileID: 144334955}
   - component: {fileID: 144334956}
   m_Layer: 0
-  m_Name: CacheManager
+  m_Name: VideoCacheManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -601,7 +601,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   videoPlayer: {fileID: 1009346125}
-  autoPlayWhenPrepared: 1
+  autoPlayWhenPrepared: 0
 --- !u!82 &167703393
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1501,17 +1501,17 @@ MonoBehaviour:
   choiceAText: {fileID: 0}
   choiceBText: {fileID: 0}
   videoA:
-    title: Antarctica V2
+    title: Antarctica
     description: 
-    sourceMode: 0
-    localClip: {fileID: 32900000, guid: a53026b99100d164dacb57e1a17c223c, type: 3}
+    sourceMode: 1
+    localClip: {fileID: 0}
     url: 
     thumbnail: {fileID: 0}
   videoB:
-    title: Antarctica V2
+    title: Antarctica
     description: 
-    sourceMode: 0
-    localClip: {fileID: 32900000, guid: a53026b99100d164dacb57e1a17c223c, type: 3}
+    sourceMode: 1
+    localClip: {fileID: 0}
     url: 
     thumbnail: {fileID: 0}
 --- !u!1 &297644792
@@ -2822,6 +2822,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 830262316}
   m_CullTransparentMesh: 0
+--- !u!1 &857408021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 857408022}
+  - component: {fileID: 857408023}
+  m_Layer: 0
+  m_Name: VideoPreloader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &857408022
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 857408021}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1022842797}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &857408023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 857408021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a378097cab49dc4cb5c6297a6a5d90e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  videoCacheManager: {fileID: 144334956}
+  playbackManager: {fileID: 167703392}
+  antarcticVideo:
+    title: Antarctica
+    description: 
+    sourceMode: 1
+    localClip: {fileID: 0}
+    url: 
+    thumbnail: {fileID: 0}
 --- !u!1 &866805781
 GameObject:
   m_ObjectHideFlags: 0
@@ -3214,7 +3267,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1009346124}
   m_Enabled: 1
-  m_VideoClip: {fileID: 0}
+  m_VideoClip: {fileID: 32900000, guid: a53026b99100d164dacb57e1a17c223c, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -3324,6 +3377,7 @@ Transform:
   - {fileID: 730172730}
   - {fileID: 1697105406}
   - {fileID: 144334955}
+  - {fileID: 857408022}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1076115800
@@ -3701,8 +3755,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playbackManager: {fileID: 167703392}
   uiManager: {fileID: 167703394}
+  videoCacheManager: {fileID: 144334956}
   antarcticVideo:
-    title: Antarctica Scuba
+    title: Antarctica
     description: 
     sourceMode: 1
     localClip: {fileID: 0}
@@ -5200,6 +5255,24 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4899583741315840764, guid: 058c71a43cc03444fbb222f74297f85a, type: 3}
   m_PrefabInstance: {fileID: 1580157343}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1584777753 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4312759589938927484, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+  m_PrefabInstance: {fileID: 8839457145026391851}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1584777759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1584777753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f61a5d93c4848744684cc3a45ff16b3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenu: {fileID: 1645756233}
 --- !u!1 &1596852264
 GameObject:
   m_ObjectHideFlags: 0
@@ -8465,6 +8538,42 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -26
       objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: LeaveRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 5283372229012906978, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_Enabled
       value: 1
@@ -8736,6 +8845,7 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 3723249095872258078, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
     - {fileID: 3723249095030767927, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+    - {fileID: 4456258537928325005, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
     m_RemovedGameObjects:
     - {fileID: 3781581075683782597, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
     - {fileID: 3723249095179225144, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
@@ -8750,6 +8860,9 @@ PrefabInstance:
       insertIndex: 3
       addedObject: {fileID: 1743170266}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4312759589938927484, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1584777759}
     - targetCorrespondingSourceObject: {fileID: 3723249095030767922, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 123082653}

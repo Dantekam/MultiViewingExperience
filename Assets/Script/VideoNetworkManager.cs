@@ -7,6 +7,7 @@ public class VideoNetworkManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlaybackManager playbackManager;
     [SerializeField] private UIManager uiManager;
+    [SerializeField] private VideoCacheManager videoCacheManager;
 
     [Header("Video")]
     [SerializeField] private VideoEntry antarcticVideo;
@@ -28,9 +29,9 @@ public class VideoNetworkManager : MonoBehaviour
             "VideoNetworkManager: Registered with Ubiq.");
     }
 
-    // ==========================================
+    // =========================================================
     // HOST SEND COMMANDS
-    // ==========================================
+    // =========================================================
 
     public void SendPlay()
     {
@@ -106,16 +107,16 @@ public class VideoNetworkManager : MonoBehaviour
         SendAndApply(message);
     }
 
-    // ==========================================
+    // =========================================================
     // NETWORK
-    // ==========================================
+    // =========================================================
 
     private void SendAndApply(VideoMessage message)
     {
         // Host performs the command locally.
         ApplyMessage(message);
 
-        // Send it to the other users.
+        // Send command to the other users.
         if (context.Scene != null)
         {
             Debug.Log(
@@ -142,9 +143,9 @@ public class VideoNetworkManager : MonoBehaviour
         ApplyMessage(message);
     }
 
-    // ==========================================
+    // =========================================================
     // APPLY COMMAND LOCALLY
-    // ==========================================
+    // =========================================================
 
     private void ApplyMessage(VideoMessage message)
     {
@@ -164,10 +165,22 @@ public class VideoNetworkManager : MonoBehaviour
                     "VideoNetworkManager: Applying START.");
 
                 if (uiManager != null)
+                {
                     uiManager.ApplyExperienceStarted();
+                }
 
-                if (antarcticVideo != null)
-                    playbackManager.LoadVideo(antarcticVideo);
+                // The video should ALREADY be loaded and prepared
+                // by VideoPreloader before Play is pressed.
+                if (!playbackManager.IsPrepared)
+                {
+                    Debug.LogWarning(
+                        "VideoNetworkManager: Cannot start - video is not prepared yet.");
+
+                    break;
+                }
+
+                playbackManager.SeekTo(0);
+                playbackManager.PlayVideo();
 
                 break;
             }
@@ -176,6 +189,14 @@ public class VideoNetworkManager : MonoBehaviour
             {
                 Debug.Log(
                     "VideoNetworkManager: Applying RESUME.");
+
+                if (!playbackManager.IsPrepared)
+                {
+                    Debug.LogWarning(
+                        "VideoNetworkManager: Cannot resume - video is not prepared.");
+
+                    break;
+                }
 
                 playbackManager.PlayVideo();
 
@@ -197,6 +218,14 @@ public class VideoNetworkManager : MonoBehaviour
                 Debug.Log(
                     "VideoNetworkManager: Applying RESTART.");
 
+                if (!playbackManager.IsPrepared)
+                {
+                    Debug.LogWarning(
+                        "VideoNetworkManager: Cannot restart - video is not prepared.");
+
+                    break;
+                }
+
                 playbackManager.SeekTo(0);
                 playbackManager.PlayVideo();
 
@@ -207,6 +236,14 @@ public class VideoNetworkManager : MonoBehaviour
             {
                 Debug.Log(
                     $"VideoNetworkManager: Applying SEEK {message.time:F2}");
+
+                if (!playbackManager.IsPrepared)
+                {
+                    Debug.LogWarning(
+                        "VideoNetworkManager: Cannot seek - video is not prepared.");
+
+                    break;
+                }
 
                 playbackManager.SeekTo(message.time);
 

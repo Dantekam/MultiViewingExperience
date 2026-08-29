@@ -125,4 +125,15 @@ public class HostManager : MonoBehaviour
 
         OnRoleChanged?.Invoke();
     }
+
+    public void ClearRole()
+    {
+        IsHost = false;
+        IsClient = false;
+        pendingRole = PendingRole.None;
+
+        Debug.Log("HostManager: Role cleared - NOT IN ROOM");
+
+        OnRoleChanged?.Invoke();
+    }
 }
