@@ -181,6 +181,17 @@ public class PlaybackManager : MonoBehaviour
         VideoFinished?.Invoke(currentVideo);
     }
 
+    public void StopVideo()
+    {
+        if (videoPlayer == null)
+            return;
+
+        videoPlayer.Stop();
+
+        Debug.Log(
+            $"Video stopped: {currentVideo?.title}");
+    }
+
     public void LoadLocalFile(
         VideoEntry entry,
         string localPath)

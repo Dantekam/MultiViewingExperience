@@ -79,10 +79,8 @@ public class UIManager : MonoBehaviour
         UpdateTimelineSlider();
     }
 
-    // =========================================================
-    // HOST UI
-    // =========================================================
 
+    // Host UI
     public void RefreshHostUI()
     {
         bool host =
@@ -102,11 +100,7 @@ public class UIManager : MonoBehaviour
             controlPanel.SetActive(false);
     }
 
-    // =========================================================
-    // EXPERIENCE
     // Called locally AND on network clients.
-    // =========================================================
-
     public void ApplyExperienceStarted()
     {
         Debug.Log("UIManager: Applying Experience Started");
@@ -120,9 +114,8 @@ public class UIManager : MonoBehaviour
         SetSkybox(videoSkybox);
     }
 
-    // =========================================================
-    // PROFESSOR BUTTONS
-    // =========================================================
+
+    // Professor Buttons
 
     public void OnPlayPressed()
     {
@@ -164,10 +157,7 @@ public class UIManager : MonoBehaviour
         videoNetworkManager?.SendRestart();
     }
 
-    // =========================================================
-    // TIMELINE
-    // =========================================================
-
+    // Timeline
     private void UpdateTimelineSlider()
     {
         if (!CanControlVideo())
@@ -220,10 +210,7 @@ public class UIManager : MonoBehaviour
                hostManager.IsHost;
     }
 
-    // =========================================================
-    // SKYBOX
-    // =========================================================
-
+    // Skybox
     private void SetSkybox(Material skybox)
     {
         if (skybox == null)
@@ -231,5 +218,37 @@ public class UIManager : MonoBehaviour
 
         RenderSettings.skybox = skybox;
         DynamicGI.UpdateEnvironment();
+    }
+
+    public void ReturnToLobby()
+    {
+        Debug.Log("UIManager: Returning to lobby.");
+
+        if (playbackManager != null)
+        {
+            playbackManager.StopVideo();
+        }
+
+        if (environmentManager != null)
+        {
+            environmentManager.ShowEnvironment();
+        }
+
+        SetSkybox(lobbySkybox);
+
+        if (lobbyMusic != null)
+        {
+            if (!lobbyMusic.isPlaying)
+            {
+                lobbyMusic.Play();
+            }
+        }
+
+        if (controlPanel != null)
+        {
+            controlPanel.SetActive(false);
+        }
+
+        RefreshHostUI();
     }
 }

@@ -5273,6 +5273,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainMenu: {fileID: 1645756233}
+  uiManager: {fileID: 167703394}
 --- !u!1 &1596852264
 GameObject:
   m_ObjectHideFlags: 0
@@ -8549,7 +8550,7 @@ PrefabInstance:
     - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1584777759}
     - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -8559,12 +8560,16 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: LeaveRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: LeaveRoom
       objectReference: {fileID: 0}
     - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: 
+      value: AntarcticaLeaveRoomButton, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4952838323209676942, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName

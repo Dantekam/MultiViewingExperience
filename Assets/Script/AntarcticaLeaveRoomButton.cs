@@ -3,25 +3,23 @@ using Ubiq.Samples;
 
 public class AntarcticaLeaveRoomButton : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private SocialMenu mainMenu;
+    [SerializeField] private UIManager uiManager;
 
     public void LeaveRoom()
     {
-        if (mainMenu == null)
-        {
-            Debug.LogError(
-                "AntarcticaLeaveRoomButton: SocialMenu missing.");
-            return;
-        }
+        Debug.Log(
+            "AntarcticaLeaveRoomButton: Leaving shared experience.");
 
         if (HostManager.Instance != null)
         {
             HostManager.Instance.ClearRole();
         }
 
-        Debug.Log(
-            "AntarcticaLeaveRoomButton: Leaving current room.");
-
-        mainMenu.roomClient.Join("", false);
+        if (uiManager != null)
+        {
+            uiManager.ReturnToLobby();
+        }
     }
 }
