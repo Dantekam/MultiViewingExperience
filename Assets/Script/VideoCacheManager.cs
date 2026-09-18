@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 public class VideoCacheManager : MonoBehaviour
 {
-    [Header("Cache")]
+    [Header("Default Cache")]
     [SerializeField] private string cachedFileName = "antarctica.mp4";
 
     public bool IsDownloading { get; private set; }
@@ -16,9 +16,7 @@ public class VideoCacheManager : MonoBehaviour
     {
         get
         {
-            return Path.Combine(
-                Application.persistentDataPath,
-                cachedFileName);
+            return GetLocalVideoPath(cachedFileName);
         }
     }
 
@@ -26,21 +24,40 @@ public class VideoCacheManager : MonoBehaviour
     public event Action<float> DownloadProgressChanged;
     public event Action<string> DownloadFailed;
 
-    public bool HasCachedVideo()
+    public string GetLocalVideoPath(string fileName)
     {
-        return File.Exists(LocalVideoPath);
+        return Path.Combine(
+            Application.persistentDataPath,
+            fileName);
     }
 
-    public void PrepareVideo(string remoteUrl)
+    public bool HasCachedVideo()
     {
-        if (HasCachedVideo())
+        return HasCachedVideo(cachedFileName);
+    }
+
+    public bool HasCachedVideo(string fileName)
+    {
+        return File.Exists(
+            GetLocalVideoPath(fileName));
+    }
+
+
+    public void PrepareVideo(
+        string fileName,
+        string remoteUrl)
+    {
+        string localPath =
+            GetLocalVideoPath(fileName);
+
+        if (File.Exists(localPath))
         {
             IsReady = true;
 
             Debug.Log(
-                $"VideoCacheManager: Cached video found at {LocalVideoPath}");
+                $"VideoCacheManager: Cached video found at {localPath}");
 
-            VideoReady?.Invoke(LocalVideoPath);
+            VideoReady?.Invoke(localPath);
 
             return;
         }
@@ -48,7 +65,7 @@ public class VideoCacheManager : MonoBehaviour
         if (string.IsNullOrWhiteSpace(remoteUrl))
         {
             string message =
-                "VideoCacheManager: Remote video URL is missing.";
+                $"VideoCacheManager: {fileName} is not cached and no remote URL was supplied.";
 
             Debug.LogError(message);
 
@@ -58,25 +75,33 @@ public class VideoCacheManager : MonoBehaviour
         }
 
         StartCoroutine(
-            DownloadVideo(remoteUrl));
+            DownloadVideo(
+                fileName,
+                remoteUrl));
     }
 
-    private IEnumerator DownloadVideo(string remoteUrl)
+    private IEnumerator DownloadVideo(
+        string fileName,
+        string remoteUrl)
     {
         IsDownloading = true;
         IsReady = false;
 
-        Debug.Log(
-            $"VideoCacheManager: Downloading video from {remoteUrl}");
+        string localPath =
+            GetLocalVideoPath(fileName);
 
         string temporaryPath =
-            LocalVideoPath + ".download";
+            localPath + ".download";
+
+        Debug.Log(
+            $"VideoCacheManager: Downloading {fileName} from {remoteUrl}");
 
         using (UnityWebRequest request =
                UnityWebRequest.Get(remoteUrl))
         {
             request.downloadHandler =
-                new DownloadHandlerFile(temporaryPath);
+                new DownloadHandlerFile(
+                    temporaryPath);
 
             UnityWebRequestAsyncOperation operation =
                 request.SendWebRequest();
@@ -108,19 +133,19 @@ public class VideoCacheManager : MonoBehaviour
             }
         }
 
-        if (File.Exists(LocalVideoPath))
-            File.Delete(LocalVideoPath);
+        if (File.Exists(localPath))
+            File.Delete(localPath);
 
         File.Move(
             temporaryPath,
-            LocalVideoPath);
+            localPath);
 
         IsDownloading = false;
         IsReady = true;
 
         Debug.Log(
-            $"VideoCacheManager: Video cached at {LocalVideoPath}");
+            $"VideoCacheManager: Video cached at {localPath}");
 
-        VideoReady?.Invoke(LocalVideoPath);
+        VideoReady?.Invoke(localPath);
     }
 }
