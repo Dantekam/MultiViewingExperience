@@ -6,6 +6,7 @@ public class VideoLibraryManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private VideoCacheManager videoCacheManager;
     [SerializeField] private PlaybackManager playbackManager;
+    [SerializeField] private VideoEnvironmentManager videoEnvironmentManager;
 
     [Header("Available Videos")]
     [SerializeField] private VideoEntry[] videos;
@@ -143,15 +144,45 @@ public class VideoLibraryManager : MonoBehaviour
             $"title='{entry.title}', " +
             $"file='{entry.fileName}'");
 
+        // Immediately update the surrounding environment.
+        // This also provides visual confirmation that the
+        // user's video selection was received.
+        UpdateEnvironment();
+
+        // Update the Browse menu selection highlight.
         UpdateSelectionVisuals();
 
+        // Notify any other systems interested in video selection.
         VideoSelectionChanged?.Invoke(
             SelectedVideoIndex,
             SelectedVideo);
 
+        // Begin preparing the selected video.
         PrepareSelectedVideo();
 
         Debug.Log("==============================");
+    }
+
+    // =========================================================
+    // ENVIRONMENT
+    // =========================================================
+
+    private void UpdateEnvironment()
+    {
+        if (videoEnvironmentManager == null)
+        {
+            Debug.LogWarning(
+                "VideoLibraryManager: VideoEnvironmentManager is not assigned.");
+
+            return;
+        }
+
+        videoEnvironmentManager.SetEnvironment(
+            SelectedVideoIndex);
+
+        Debug.Log(
+            $"VideoLibraryManager: Environment updated for " +
+            $"video index {SelectedVideoIndex}.");
     }
 
     // =========================================================
