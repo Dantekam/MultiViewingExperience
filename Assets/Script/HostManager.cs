@@ -1,3 +1,4 @@
+
 using System;
 using UnityEngine;
 using Ubiq.Rooms;
@@ -14,6 +15,8 @@ public class HostManager : MonoBehaviour
     public bool HasRole => IsHost || IsClient;
 
     public event Action OnRoleChanged;
+
+    public const string RoleProperty = "experience.role";
 
     private enum PendingRole
     {
@@ -58,29 +61,26 @@ public class HostManager : MonoBehaviour
         }
     }
 
-    // Call this BEFORE creating a room.
     public void PrepareHostJoin()
     {
         pendingRole = PendingRole.Host;
 
-        Debug.Log("HostManager: Waiting for HOST room creation...");
+        Debug.Log(
+            "HostManager: Waiting for HOST room creation...");
     }
 
-    // Call this BEFORE joining somebody else's room.
     public void PrepareClientJoin()
     {
         pendingRole = PendingRole.Client;
 
-        Debug.Log("HostManager: Waiting to join as CLIENT...");
+        Debug.Log(
+            "HostManager: Waiting to join as CLIENT...");
     }
 
     private void OnJoinedRoom(IRoom room)
     {
-        // Ignore Ubiq's empty room.
         if (room == null || string.IsNullOrEmpty(room.UUID))
-        {
             return;
-        }
 
         if (pendingRole == PendingRole.Host)
         {
@@ -107,6 +107,8 @@ public class HostManager : MonoBehaviour
         IsHost = true;
         IsClient = false;
 
+        PublishRole("host");
+
         Debug.Log("====================================");
         Debug.Log("HostManager: THIS PLAYER IS HOST");
         Debug.Log("====================================");
@@ -119,6 +121,8 @@ public class HostManager : MonoBehaviour
         IsHost = false;
         IsClient = true;
 
+        PublishRole("client");
+
         Debug.Log("====================================");
         Debug.Log("HostManager: THIS PLAYER IS CLIENT");
         Debug.Log("====================================");
@@ -126,13 +130,32 @@ public class HostManager : MonoBehaviour
         OnRoleChanged?.Invoke();
     }
 
+    private void PublishRole(string role)
+    {
+        if (roomClient == null || roomClient.Me == null)
+        {
+            Debug.LogWarning(
+                "HostManager: Cannot publish role - local peer missing.");
+
+            return;
+        }
+
+        roomClient.Me[RoleProperty] = role;
+
+        Debug.Log(
+            $"HostManager: Published role '{role}'.");
+    }
+
     public void ClearRole()
     {
+        PublishRole("");
+
         IsHost = false;
         IsClient = false;
         pendingRole = PendingRole.None;
 
-        Debug.Log("HostManager: Role cleared - NOT IN ROOM");
+        Debug.Log(
+            "HostManager: Role cleared - NOT IN ROOM");
 
         OnRoleChanged?.Invoke();
     }
