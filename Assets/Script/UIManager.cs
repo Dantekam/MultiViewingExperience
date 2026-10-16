@@ -8,6 +8,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private EnvironmentManager environmentManager;
     [SerializeField] private VideoNetworkManager videoNetworkManager;
     [SerializeField] private PlaybackManager playbackManager;
+    [SerializeField] private ExperienceVisibilityManager experienceVisibilityManager;
 
     [Header("Audio")]
     [SerializeField] private AudioSource lobbyMusic;
@@ -112,6 +113,10 @@ public class UIManager : MonoBehaviour
             environmentManager.StartExperience();
 
         SetSkybox(videoSkybox);
+        if (experienceVisibilityManager != null)
+        {
+            experienceVisibilityManager.SetExperienceActive(true);
+        }
     }
 
 
@@ -250,5 +255,10 @@ public class UIManager : MonoBehaviour
         }
 
         RefreshHostUI();
+
+        if (experienceVisibilityManager != null)
+        {
+            experienceVisibilityManager.SetExperienceActive(false);
+        }
     }
 }

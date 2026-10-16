@@ -1,3 +1,4 @@
+
 using System;
 using UnityEngine;
 using Ubiq.Messaging;
@@ -8,43 +9,119 @@ public class VideoNetworkManager : MonoBehaviour
     [SerializeField] private PlaybackManager playbackManager;
     [SerializeField] private UIManager uiManager;
     [SerializeField] private VideoCacheManager videoCacheManager;
+    [SerializeField] private VideoLibraryManager videoLibraryManager;
 
     [Header("Video")]
     [SerializeField] private VideoEntry antarcticVideo;
 
     private NetworkContext context;
+    private bool applyingNetworkSelection;
 
     [Serializable]
     private struct VideoMessage
     {
         public string command;
         public double time;
+        public int videoIndex;
+    }
+
+    private void OnEnable()
+    {
+        if (videoLibraryManager != null)
+        {
+            videoLibraryManager.VideoSelectionChanged +=
+                OnVideoSelectionChanged;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (videoLibraryManager != null)
+        {
+            videoLibraryManager.VideoSelectionChanged -=
+                OnVideoSelectionChanged;
+        }
     }
 
     private void Start()
     {
         context = NetworkScene.Register(this);
 
-        Debug.Log(
-            "VideoNetworkManager: Registered with Ubiq.");
+        Debug.Log("VideoNetworkManager: Registered with Ubiq.");
     }
 
-    // =========================================================
-    // HOST SEND COMMANDS
-    // =========================================================
+    // =====================================================
+    // VIDEO SELECTION
+    // =====================================================
+
+    private void OnVideoSelectionChanged(
+        int index,
+        VideoEntry entry)
+    {
+        if (applyingNetworkSelection)
+            return;
+
+        if (!CanSend())
+            return;
+
+        VideoMessage message = new VideoMessage
+        {
+            command = "SelectVideo",
+            videoIndex = index,
+            time = 0
+        };
+
+        Debug.Log(
+            $"VideoNetworkManager: Broadcasting selection {index}.");
+
+        SendMessageToClients(message);
+    }
+
+    private void ApplyVideoSelection(int index)
+    {
+        if (videoLibraryManager == null)
+        {
+            Debug.LogError(
+                "VideoNetworkManager: VideoLibraryManager missing.");
+            return;
+        }
+
+        if (index < 0 || index >= videoLibraryManager.VideoCount)
+        {
+            Debug.LogWarning(
+                $"VideoNetworkManager: Invalid video index {index}.");
+            return;
+        }
+
+        applyingNetworkSelection = true;
+
+        try
+        {
+            videoLibraryManager.SelectVideo(index);
+        }
+        finally
+        {
+            applyingNetworkSelection = false;
+        }
+
+        Debug.Log(
+            $"VideoNetworkManager: Applied video selection {index}.");
+    }
+
+    // =====================================================
+    // HOST COMMANDS
+    // =====================================================
 
     public void SendPlay()
     {
         if (!CanSend())
             return;
 
-        VideoMessage message = new VideoMessage
+        SendAndApply(new VideoMessage
         {
             command = "Start",
             time = 0
-        };
-
-        SendAndApply(message);
+        });
     }
 
     public void SendResume()
@@ -52,15 +129,13 @@ public class VideoNetworkManager : MonoBehaviour
         if (!CanSend())
             return;
 
-        VideoMessage message = new VideoMessage
+        SendAndApply(new VideoMessage
         {
             command = "Resume",
             time = playbackManager != null
                 ? playbackManager.CurrentTime
                 : 0
-        };
-
-        SendAndApply(message);
+        });
     }
 
     public void SendPause()
@@ -68,15 +143,13 @@ public class VideoNetworkManager : MonoBehaviour
         if (!CanSend())
             return;
 
-        VideoMessage message = new VideoMessage
+        SendAndApply(new VideoMessage
         {
             command = "Pause",
             time = playbackManager != null
                 ? playbackManager.CurrentTime
                 : 0
-        };
-
-        SendAndApply(message);
+        });
     }
 
     public void SendRestart()
@@ -84,13 +157,11 @@ public class VideoNetworkManager : MonoBehaviour
         if (!CanSend())
             return;
 
-        VideoMessage message = new VideoMessage
+        SendAndApply(new VideoMessage
         {
             command = "Restart",
             time = 0
-        };
-
-        SendAndApply(message);
+        });
     }
 
     public void SendSeek(double time)
@@ -98,25 +169,25 @@ public class VideoNetworkManager : MonoBehaviour
         if (!CanSend())
             return;
 
-        VideoMessage message = new VideoMessage
+        SendAndApply(new VideoMessage
         {
             command = "Seek",
             time = time
-        };
-
-        SendAndApply(message);
+        });
     }
 
-    // =========================================================
+    // =====================================================
     // NETWORK
-    // =========================================================
+    // =====================================================
 
     private void SendAndApply(VideoMessage message)
     {
-        // Host performs the command locally.
         ApplyMessage(message);
+        SendMessageToClients(message);
+    }
 
-        // Send command to the other users.
+    private void SendMessageToClients(VideoMessage message)
+    {
         if (context.Scene != null)
         {
             Debug.Log(
@@ -143,17 +214,22 @@ public class VideoNetworkManager : MonoBehaviour
         ApplyMessage(message);
     }
 
-    // =========================================================
+    // =====================================================
     // APPLY COMMAND LOCALLY
-    // =========================================================
+    // =====================================================
 
     private void ApplyMessage(VideoMessage message)
     {
+        if (message.command == "SelectVideo")
+        {
+            ApplyVideoSelection(message.videoIndex);
+            return;
+        }
+
         if (playbackManager == null)
         {
             Debug.LogError(
                 "VideoNetworkManager: PlaybackManager missing.");
-
             return;
         }
 
@@ -161,92 +237,53 @@ public class VideoNetworkManager : MonoBehaviour
         {
             case "Start":
             {
-                Debug.Log(
-                    "VideoNetworkManager: Applying START.");
-
-                if (uiManager != null)
-                {
-                    uiManager.ApplyExperienceStarted();
-                }
-
-                // The video should ALREADY be loaded and prepared
-                // by VideoPreloader before Play is pressed.
                 if (!playbackManager.IsPrepared)
                 {
                     Debug.LogWarning(
-                        "VideoNetworkManager: Cannot start - video is not prepared yet.");
-
+                        "VideoNetworkManager: Cannot start - video not prepared.");
                     break;
                 }
 
                 playbackManager.SeekTo(0);
                 playbackManager.PlayVideo();
+
+                if (uiManager != null)
+                    uiManager.ApplyExperienceStarted();
 
                 break;
             }
 
             case "Resume":
             {
-                Debug.Log(
-                    "VideoNetworkManager: Applying RESUME.");
-
                 if (!playbackManager.IsPrepared)
-                {
-                    Debug.LogWarning(
-                        "VideoNetworkManager: Cannot resume - video is not prepared.");
-
                     break;
-                }
 
                 playbackManager.PlayVideo();
-
                 break;
             }
 
             case "Pause":
             {
-                Debug.Log(
-                    "VideoNetworkManager: Applying PAUSE.");
-
                 playbackManager.PauseVideo();
-
                 break;
             }
 
             case "Restart":
             {
-                Debug.Log(
-                    "VideoNetworkManager: Applying RESTART.");
-
                 if (!playbackManager.IsPrepared)
-                {
-                    Debug.LogWarning(
-                        "VideoNetworkManager: Cannot restart - video is not prepared.");
-
                     break;
-                }
 
                 playbackManager.SeekTo(0);
                 playbackManager.PlayVideo();
-
                 break;
             }
 
             case "Seek":
             {
-                Debug.Log(
-                    $"VideoNetworkManager: Applying SEEK {message.time:F2}");
-
                 if (!playbackManager.IsPrepared)
-                {
-                    Debug.LogWarning(
-                        "VideoNetworkManager: Cannot seek - video is not prepared.");
-
                     break;
-                }
 
                 playbackManager.SeekTo(message.time);
-
                 break;
             }
         }
@@ -254,22 +291,7 @@ public class VideoNetworkManager : MonoBehaviour
 
     private bool CanSend()
     {
-        if (HostManager.Instance == null)
-        {
-            Debug.LogWarning(
-                "VideoNetworkManager: HostManager missing.");
-
-            return false;
-        }
-
-        if (!HostManager.Instance.IsHost)
-        {
-            Debug.LogWarning(
-                "VideoNetworkManager: CLIENT cannot send video controls.");
-
-            return false;
-        }
-
-        return true;
+        return HostManager.Instance != null &&
+               HostManager.Instance.IsHost;
     }
 }
