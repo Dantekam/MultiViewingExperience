@@ -111,15 +111,41 @@ public class PlaybackManager : MonoBehaviour
 
     public void PlayVideo()
     {
+        if (videoPlayer == null)
+        {
+            Debug.LogError(
+                "PlaybackManager: VideoPlayer is missing.");
+            return;
+        }
+
+        Debug.Log("========================================");
+        Debug.Log(
+            $"PLAY REQUEST: " +
+            $"CurrentVideo='{currentVideo?.title}', " +
+            $"URL='{videoPlayer.url}', " +
+            $"Prepared={videoPlayer.isPrepared}");
+
         if (!videoPlayer.isPrepared)
         {
-            Debug.LogWarning("PlaybackManager: Video is not prepared yet.");
+            Debug.LogWarning(
+                $"PlaybackManager: Cannot play because " +
+                $"'{currentVideo?.title}' is not prepared yet.");
+
+            Debug.Log("========================================");
             return;
         }
 
         videoPlayer.Play();
-        Debug.Log($"Video playback started: {currentVideo?.title}");
+
+        Debug.Log(
+            $"PLAYING VIDEO: '{currentVideo?.title}'");
+
+        Debug.Log(
+            $"PLAYING FILE: '{videoPlayer.url}'");
+
         VideoStarted?.Invoke(currentVideo);
+
+        Debug.Log("========================================");
     }
 
     public void PauseVideo()

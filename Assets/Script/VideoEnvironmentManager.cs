@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class VideoEnvironmentManager : MonoBehaviour
 {
@@ -8,67 +9,152 @@ public class VideoEnvironmentManager : MonoBehaviour
     [SerializeField] private GameObject lakeEnvironment;
     [SerializeField] private GameObject oceanEnvironment;
 
+    [Header("Lobby Title")]
+    [SerializeField] private Text environmentTitle;
+
+    [Header("Playback")]
+    [SerializeField] private PlaybackManager playbackManager;
+
+    [Header("Startup")]
+    [SerializeField, Range(0, 3)] private int initialVideoIndex = 0;
+
+    private int selectedVideoIndex;
+    private bool videoMode;
+
+    private void Awake()
+    {
+        selectedVideoIndex = initialVideoIndex;
+        videoMode = false;
+
+        RefreshEnvironment();
+    }
+
+    private void OnEnable()
+    {
+        if (playbackManager == null)
+            return;
+
+        playbackManager.VideoStarted += OnVideoStarted;
+        playbackManager.VideoFinished += OnVideoFinished;
+        playbackManager.VideoError += OnVideoError;
+    }
+
+    private void OnDisable()
+    {
+        if (playbackManager == null)
+            return;
+
+        playbackManager.VideoStarted -= OnVideoStarted;
+        playbackManager.VideoFinished -= OnVideoFinished;
+        playbackManager.VideoError -= OnVideoError;
+    }
+
     public void SetEnvironment(int videoIndex)
     {
-        // Turn everything off first.
+        if (videoIndex < 0 || videoIndex > 3)
+        {
+            Debug.LogWarning(
+                $"VideoEnvironmentManager: Invalid video index {videoIndex}.");
+            return;
+        }
+
+        selectedVideoIndex = videoIndex;
+
+        RefreshEnvironment();
+
+        Debug.Log(
+            $"VideoEnvironmentManager: Selected environment {videoIndex}.");
+    }
+
+    public void ShowVideoEnvironment()
+    {
+        videoMode = true;
+        RefreshEnvironment();
+    }
+
+    public void ShowLobbyEnvironment()
+    {
+        videoMode = false;
+        RefreshEnvironment();
+    }
+
+    private void OnVideoStarted(VideoEntry entry)
+    {
+        ShowVideoEnvironment();
+    }
+
+    private void OnVideoFinished(VideoEntry entry)
+    {
+        ShowLobbyEnvironment();
+    }
+
+    private void OnVideoError(VideoEntry entry, string message)
+    {
+        ShowLobbyEnvironment();
+    }
+
+    private void RefreshEnvironment()
+    {
         SetAllEnvironments(false);
 
-        switch (videoIndex)
+        if (!videoMode)
         {
-            // Antarctica
-            case 0:
-                if (snowyEnvironment != null)
-                    snowyEnvironment.SetActive(true);
+            switch (selectedVideoIndex)
+            {
+                case 0:
+                    SetActive(snowyEnvironment, true);
+                    break;
 
-                Debug.Log(
-                    "VideoEnvironmentManager: Snowy Environment enabled.");
-                break;
+                case 1:
+                    SetActive(lakeEnvironment, true);
+                    break;
 
-            // Lake
-            case 1:
-                if (lakeEnvironment != null)
-                    lakeEnvironment.SetActive(true);
+                case 2:
+                    SetActive(swampEnvironment, true);
+                    break;
 
-                Debug.Log(
-                    "VideoEnvironmentManager: Lake Environment enabled.");
-                break;
+                case 3:
+                    SetActive(oceanEnvironment, true);
+                    break;
+            }
+        }
 
-            // Swamp
-            case 2:
-                if (swampEnvironment != null)
-                    swampEnvironment.SetActive(true);
+        if (environmentTitle != null)
+        {
+            switch (selectedVideoIndex)
+            {
+                case 0:
+                    environmentTitle.text = "Antarctica";
+                    break;
 
-                Debug.Log(
-                    "VideoEnvironmentManager: Swamp Environment enabled.");
-                break;
+                case 1:
+                    environmentTitle.text = "Lake";
+                    break;
 
-            // Ocean
-            case 3:
-                if (oceanEnvironment != null)
-                    oceanEnvironment.SetActive(true);
-                Debug.Log(
-                    "VideoEnvironmentManager: Ocean Environment enabled.");
-                break;
+                case 2:
+                    environmentTitle.text = "Swamp";
+                    break;
 
-            default:
-                Debug.LogWarning(
-                    $"VideoEnvironmentManager: No environment configured for video index {videoIndex}.");
-                break;
+                case 3:
+                    environmentTitle.text = "Ocean";
+                    break;
+            }
         }
     }
 
     private void SetAllEnvironments(bool active)
     {
-        if (snowyEnvironment != null)
-            snowyEnvironment.SetActive(active);
+        SetActive(snowyEnvironment, active);
+        SetActive(lakeEnvironment, active);
+        SetActive(swampEnvironment, active);
+        SetActive(oceanEnvironment, active);
+    }
 
-        if (swampEnvironment != null)
-            swampEnvironment.SetActive(active);
-
-        if (lakeEnvironment != null)
-            lakeEnvironment.SetActive(active);
-        
-        if (oceanEnvironment != null)
-            oceanEnvironment.SetActive(active);
+    private static void SetActive(GameObject target, bool active)
+    {
+        if (target != null && target.activeSelf != active)
+        {
+            target.SetActive(active);
+        }
     }
 }
