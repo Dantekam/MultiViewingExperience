@@ -6,6 +6,7 @@ public class VideoEnvironmentManager : MonoBehaviour
     [SerializeField] private GameObject snowyEnvironment;
     [SerializeField] private GameObject swampEnvironment;
     [SerializeField] private GameObject lakeEnvironment;
+    [SerializeField] private GameObject oceanEnvironment;
 
     public void SetEnvironment(int videoIndex)
     {
@@ -41,6 +42,14 @@ public class VideoEnvironmentManager : MonoBehaviour
                     "VideoEnvironmentManager: Swamp Environment enabled.");
                 break;
 
+            // Ocean
+            case 3:
+                if (oceanEnvironment != null)
+                    oceanEnvironment.SetActive(true);
+                Debug.Log(
+                    "VideoEnvironmentManager: Ocean Environment enabled.");
+                break;
+
             default:
                 Debug.LogWarning(
                     $"VideoEnvironmentManager: No environment configured for video index {videoIndex}.");
@@ -58,5 +67,8 @@ public class VideoEnvironmentManager : MonoBehaviour
 
         if (lakeEnvironment != null)
             lakeEnvironment.SetActive(active);
+        
+        if (oceanEnvironment != null)
+            oceanEnvironment.SetActive(active);
     }
 }
