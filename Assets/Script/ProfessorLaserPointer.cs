@@ -1,3 +1,4 @@
+
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,12 +21,15 @@ public class ProfessorLaserPointer : MonoBehaviour
 
     [Header("Networking")]
     [SerializeField] private float sendInterval = 0.05f;
+    [SerializeField] private float remoteTimeout = 1f;
 
     private NetworkContext context;
     private LineRenderer laserLine;
 
     private bool laserActive;
     private float nextSendTime;
+    private float lastRemoteUpdateTime;
+    private bool networkReady;
 
     [Serializable]
     private struct LaserMessage
@@ -37,14 +41,17 @@ public class ProfessorLaserPointer : MonoBehaviour
 
     private void Awake()
     {
-        laserLine = gameObject.AddComponent<LineRenderer>();
+        laserLine = GetComponent<LineRenderer>();
+
+        if (laserLine == null)
+        {
+            laserLine = gameObject.AddComponent<LineRenderer>();
+        }
 
         laserLine.positionCount = 2;
         laserLine.startWidth = laserWidth;
         laserLine.endWidth = laserWidth;
-
         laserLine.useWorldSpace = true;
-
         laserLine.startColor = laserColor;
         laserLine.endColor = laserColor;
 
@@ -59,6 +66,7 @@ public class ProfessorLaserPointer : MonoBehaviour
     private void Start()
     {
         context = NetworkScene.Register(this);
+        networkReady = true;
 
         Debug.Log(
             "ProfessorLaserPointer: Registered with Ubiq.");
@@ -71,71 +79,122 @@ public class ProfessorLaserPointer : MonoBehaviour
         {
             pointerAction.action.Enable();
         }
+
+        if (hostManager != null)
+        {
+            hostManager.OnRoleChanged += OnRoleChanged;
+        }
     }
 
     private void OnDisable()
     {
+        if (hostManager != null)
+        {
+            hostManager.OnRoleChanged -= OnRoleChanged;
+        }
+
+        if (networkReady &&
+            hostManager != null &&
+            hostManager.IsHost &&
+            laserActive)
+        {
+            SendLaserMessage(
+                false,
+                Vector3.zero,
+                Vector3.forward);
+        }
+
         if (pointerAction != null &&
             pointerAction.action != null)
         {
             pointerAction.action.Disable();
         }
 
-        if (laserLine != null)
-        {
-            laserLine.enabled = false;
-        }
+        HideLaser();
     }
 
     private void Update()
     {
-        if (hostManager == null ||
-            !hostManager.IsHost)
+        if (hostManager == null)
         {
+            HideLaser();
+            return;
+        }
+
+        if (!hostManager.IsHost)
+        {
+            // Remote pointers are controlled by Ubiq messages.
+            // Hide stale pointers if the host disconnects.
+            if (laserActive &&
+                Time.time - lastRemoteUpdateTime > remoteTimeout)
+            {
+                HideLaser();
+            }
+
             return;
         }
 
         if (rightController == null ||
-            pointerAction == null)
+            pointerAction == null ||
+            pointerAction.action == null)
         {
+            if (laserActive)
+            {
+                StopPointing();
+            }
+
             return;
         }
 
-        bool pressed =
-            pointerAction.action.IsPressed();
+        bool pressed = pointerAction.action.IsPressed();
 
         if (pressed)
         {
-            Vector3 origin =
-                rightController.position;
-
-            Vector3 direction =
-                rightController.forward;
+            Vector3 origin = rightController.position;
+            Vector3 direction = rightController.forward;
 
             UpdateLaser(origin, direction, true);
 
             if (Time.time >= nextSendTime)
             {
                 nextSendTime =
-                    Time.time + sendInterval;
+                    Time.time + Mathf.Max(0.02f, sendInterval);
 
-                SendLaserMessage(
-                    true,
-                    origin,
-                    direction);
+                SendLaserMessage(true, origin, direction);
             }
         }
         else if (laserActive)
         {
-            UpdateLaser(
-                Vector3.zero,
-                Vector3.forward,
-                false);
+            StopPointing();
+        }
+    }
 
-            SendLaserMessage(
-                false,
-                Vector3.zero,
-                Vector3.forward);
+    private void OnRoleChanged()
+    {
+        if (hostManager == null ||
+            !hostManager.IsHost)
+        {
+            HideLaser();
+        }
+    }
+
+    private void StopPointing()
+    {
+        HideLaser();
+
+        SendLaserMessage(
+            false,
+            Vector3.zero,
+            Vector3.forward);
+    }
+
+    private void HideLaser()
+    {
+        laserActive = false;
+
+        if (laserLine != null)
+        {
+            laserLine.enabled = false;
         }
     }
 
@@ -145,7 +204,6 @@ public class ProfessorLaserPointer : MonoBehaviour
         bool active)
     {
         laserActive = active;
-
         laserLine.enabled = active;
 
         if (!active)
@@ -165,7 +223,7 @@ public class ProfessorLaserPointer : MonoBehaviour
         Vector3 origin,
         Vector3 direction)
     {
-        if (context.Scene == null)
+        if (!networkReady || context.Scene == null)
         {
             return;
         }
@@ -183,7 +241,6 @@ public class ProfessorLaserPointer : MonoBehaviour
     public void ProcessMessage(
         ReferenceCountedSceneGraphMessage networkMessage)
     {
-        // The host controls the pointer locally.
         if (hostManager != null &&
             hostManager.IsHost)
         {
@@ -192,6 +249,8 @@ public class ProfessorLaserPointer : MonoBehaviour
 
         LaserMessage message =
             networkMessage.FromJson<LaserMessage>();
+
+        lastRemoteUpdateTime = Time.time;
 
         UpdateLaser(
             message.origin,
