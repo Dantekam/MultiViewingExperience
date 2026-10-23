@@ -4,35 +4,39 @@ using UnityEngine;
 public class StudentAvatarVisibility : MonoBehaviour
 {
     private Renderer[] avatarRenderers;
-    private bool[] originalRendererStates;
+    private bool hidden;
 
     private void Awake()
     {
         avatarRenderers =
             GetComponentsInChildren<Renderer>(true);
-
-        originalRendererStates =
-            new bool[avatarRenderers.Length];
-
-        for (int i = 0; i < avatarRenderers.Length; i++)
-        {
-            originalRendererStates[i] =
-                avatarRenderers[i].enabled;
-        }
     }
 
     public void SetVisible(bool visible)
     {
+        hidden = !visible;
+        ApplyVisibility();
+    }
+
+    private void LateUpdate()
+    {
+        if (hidden)
+        {
+            ApplyVisibility();
+        }
+    }
+
+    private void ApplyVisibility()
+    {
         if (avatarRenderers == null)
             return;
 
-        for (int i = 0; i < avatarRenderers.Length; i++)
+        foreach (Renderer avatarRenderer in avatarRenderers)
         {
-            if (avatarRenderers[i] == null)
+            if (avatarRenderer == null)
                 continue;
 
-            avatarRenderers[i].enabled =
-                visible && originalRendererStates[i];
+            avatarRenderer.forceRenderingOff = hidden;
         }
     }
 }
