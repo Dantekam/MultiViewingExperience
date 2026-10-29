@@ -1,0 +1,34 @@
+{
+    "name": "ProfessorPointerControls",
+    "maps": [
+        {
+            "name": "Professor",
+            "id": "1f4fa2f1-5982-4271-8c97-91a06939f8c7",
+            "actions": [
+                {
+                    "name": "Pointer",
+                    "type": "Button",
+                    "id": "ef01f683-1678-46a3-8227-06cea31b1fb7",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "24d70caf-36bb-447c-9228-5f267e2c83cb",
+                    "path": "<XRController>{RightHand}/{PrimaryButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pointer",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

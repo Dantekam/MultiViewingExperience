@@ -8,7 +8,7 @@ public class PlaybackManager : MonoBehaviour
     [SerializeField] private VideoPlayer videoPlayer;
 
     [Header("Startup")]
-    [SerializeField] private bool autoPlayWhenPrepared = true;
+    [SerializeField] private bool autoPlayWhenPrepared = false;
 
     public VideoEntry CurrentVideo => currentVideo;
     public bool IsPrepared => videoPlayer != null && videoPlayer.isPrepared;
@@ -94,7 +94,7 @@ public class PlaybackManager : MonoBehaviour
                     return;
                 }
 
-                string fullPath = VideoPathUtility.GetStreamingVideoPath(entry.url);
+                string fullPath = entry.url; //VideoPathUtility.GetStreamingVideoPath(entry.url);
 
                 videoPlayer.source = VideoSource.Url;
                 videoPlayer.clip = null;
@@ -111,15 +111,41 @@ public class PlaybackManager : MonoBehaviour
 
     public void PlayVideo()
     {
+        if (videoPlayer == null)
+        {
+            Debug.LogError(
+                "PlaybackManager: VideoPlayer is missing.");
+            return;
+        }
+
+        Debug.Log("========================================");
+        Debug.Log(
+            $"PLAY REQUEST: " +
+            $"CurrentVideo='{currentVideo?.title}', " +
+            $"URL='{videoPlayer.url}', " +
+            $"Prepared={videoPlayer.isPrepared}");
+
         if (!videoPlayer.isPrepared)
         {
-            Debug.LogWarning("PlaybackManager: Video is not prepared yet.");
+            Debug.LogWarning(
+                $"PlaybackManager: Cannot play because " +
+                $"'{currentVideo?.title}' is not prepared yet.");
+
+            Debug.Log("========================================");
             return;
         }
 
         videoPlayer.Play();
-        Debug.Log($"Video playback started: {currentVideo?.title}");
+
+        Debug.Log(
+            $"PLAYING VIDEO: '{currentVideo?.title}'");
+
+        Debug.Log(
+            $"PLAYING FILE: '{videoPlayer.url}'");
+
         VideoStarted?.Invoke(currentVideo);
+
+        Debug.Log("========================================");
     }
 
     public void PauseVideo()
@@ -179,6 +205,57 @@ public class PlaybackManager : MonoBehaviour
     {
         Debug.Log($"Video playback finished: {currentVideo?.title}");
         VideoFinished?.Invoke(currentVideo);
+    }
+
+    public void StopVideo()
+    {
+        if (videoPlayer == null)
+            return;
+
+        videoPlayer.Stop();
+
+        Debug.Log(
+            $"Video stopped: {currentVideo?.title}");
+    }
+
+    public void LoadLocalFile(
+        VideoEntry entry,
+        string localPath)
+    {
+        if (entry == null)
+        {
+            Debug.LogWarning(
+                "PlaybackManager: VideoEntry is null.");
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(localPath))
+        {
+            Debug.LogError(
+                "PlaybackManager: Local video path is empty.");
+
+            return;
+        }
+
+        currentVideo = entry;
+
+        videoPlayer.Stop();
+
+        videoPlayer.source =
+            VideoSource.Url;
+
+        videoPlayer.clip = null;
+
+        videoPlayer.url =
+            localPath;
+
+        Debug.Log(
+            $"PlaybackManager: Preparing cached local video from {localPath}");
+
+        VideoPrepareStarted?.Invoke(entry);
+
+        videoPlayer.Prepare();
     }
 }
 
